@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from Models import Organization, Employee
 
 
-# criando registros
 def create_organization(db: Session, organization: Organization):
     new_organization = Organization(**organization.dict())
     db.add(new_organization)
@@ -31,13 +30,3 @@ def retrieve_all_organization(db: Session):
 
 def get_all_employees(db: Session):
     return db.query(Employee).all()
-
-    # estabelece a conexão com o banco de dados que é passada (via injeção de dependência) para cada função que precisa conectar ao banco.
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
