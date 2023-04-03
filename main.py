@@ -7,11 +7,10 @@
 # 4. Ao cadastrar um funcionario verificar se existe a empresa associada
 
 
-import logging
-from typing import Optional
+from typing import Optional, List
 from uuid import uuid4
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -59,22 +58,30 @@ def create_employee(db: Session, employee: Employee):
     organization = db.query(Organization).filter(Organization.id == employee.organization_id).first()
     if not organization:
         raise HTTPException(status_code=401, detail="Organização não encontrada.")
-    new_employee = Employee(**employee.dict())
+    employee_dict = employee.dict(exclude={'organization_id'})
+    new_employee = Employee(**employee_dict)
+    new_employee.organization_id = employee.organization_id
     db.add(new_employee)
     db.commit()
     db.refresh(new_employee)
+    new_employee.organization = organization
     return new_employee
 
 
 # recupera registros
 
-def retrieve_all_organization(db: Session):
+def retrieve_all_organizations(db: Session):
     return db.query(Organization).all()
 
 
 def get_all_employees(db: Session):
-    return db.query(Employee).all()
-
+    organizations = db.query(Organization).all()
+    if not organizations:
+        raise HTTPException(status_code=404, detail="Organizações não encontradas.")
+    employees = db.query(Employee).all()
+    for employee in employees:
+        employee.organization = next((org for org in organizations if org.id == employee.organization_id), None)
+    return employees
     # estabelece a conexão com o banco de dados que é passada (via injeção de dependência) para cada função que precisa conectar ao banco.
 
 
@@ -92,60 +99,51 @@ app = FastAPI()
 # requisicoes
 
 # Rota para obter todas as empresas
-@app.get("/api/v1/organizations", response_model=Organization, status_code=status.HTTP_200_OK)
-def get_all_organization(token: str, organization: Organization):
+@app.get("/api/v1/organizations", response_model=List[Organization], status_code=status.HTTP_200_OK)
+def get_all_organization(token: str, db: Session = Depends(get_db)):
     """Função para obter todas as empresas"""
     if token != "260556":  # verificando se o token é valido
         raise HTTPException(status_code=401, detail="nao autenticado")  # se for invalido vai aparecer essa exceção
-        logging.error('nao autenticado')
-        organizations = retrieve_all_organization(db)
+    organizations = retrieve_all_organization(db)
     if not organizations:
-        raise HTTPException(status_code=401, detail="Organização não encontrada.")
-        logging.error('Organização não encontrada.')
+        raise HTTPException(status_code=404, detail="Organizações não encontradas.")
     return organizations
 
 
 # Rota para cadastrar uma nova empresa
-@app.post("/api/v1/organizations", response_model=Organization,
-          status_code=status.HTTP_200_OK)  # rota da API, responsável por realizar o cadastro de novas organizacoes, com a requisição do tipo POST
-async def create_organization(token: str, organization: Organization):
-    """Função para criar uma empresa"""
-    if token != "260556":  # verificando se o token é valido
-        raise HTTPException(status_code=401, detail="nao autenticado")  # se for invalido vai aparecer essa exceção
-        logging.error('nao autenticado')
-    ok  # TODO printar a mensagem recebida usando [logger](https://docs.python.org/3/library/logging.html)
-    return organization  # retorna a organizacao criada
+@app.post("/api/v1/organizations", response_model=Organization, status_code=status.HTTP_201_CREATED)
+def create_organization(token: str, organization: Organization, db: Session = Depends(get_db)):
+    """Função para criar uma nova organização"""
+    if token != "260556":
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    new_organization = create_organization(db, organization)
+    return new_organization
 
 
 @app.put("/api/v1/organizations/", response_model=Organization, status_code=status.HTTP_200_OK)
-def update_organization(token: str, organization: Organization):
-    """Função para atualizar as empresas"""
-    if token != "260556":  # verificando se o token é valido
-        raise HTTPException(status_code=401, detail="nao autenticado")  # se for invalido vai aparecer essa exceção
-        logging.error('nao autenticado')
-    organizations = retrieve_all_organization(db)
-    if not organizations:
-        raise HTTPException(status_code=401, detail="Organização não encontrada.")
-        logging.error('Organização não encontrada.')
+def update_organization(token: str, organization: Organization, db: Session = Depends(get_db)):
+    """Função para atualizar uma empresa"""
+    if token != "260556":
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    db_organization = get_organization(db, organization.id)
+    if not db_organization:
+        raise HTTPException(status_code=404, detail="Organização não encontrada")
     db_organization = update_organization_data(db, organization)
-    return organizations
+    return db_organization
 
 
 # roda no terminal do VSCODE: uvicorn main:app --reload
 
 
 @app.post("/api/v1/organizations")
-async def request(token: str, organization: Organization):
+async def create_organization(token: str, organization: Organization):
+    """Função para criar uma nova organização"""
     if token != "260556":
-        raise HTTPException(status_code=401, detail="nao autenticado")
-        logging.error('nao autenticado')
+        raise HTTPException(status_code=401, detail="Não autenticado")
     url = "http://localhost:8000/api/v1/organizations"
-    payload = {
-        "id": organization.id,
-        "name": organization.name,
-        "address": organization.address,
-    }
-    response = requests.post(url, data=json.dumps(payload))
+    payload = organization.dict()  # Convertendo o objeto Organization para um dicionário
+    response = requests.post(url, json=payload)  # Usando o método json para enviar o dicionário como payload
+    response.raise_for_status()  # Verificando se houve erro na requisição e, em caso positivo, lançando uma exceção
     return response.json()
 
 # Bonus
