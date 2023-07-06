@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from Models import Organization, Employee
 
 
-# criando registros
+# Criando registros
 def create_organization(db: Session, organization: Organization):
     new_organization = Organization(**organization.dict())
     db.add(new_organization)
@@ -15,7 +15,7 @@ def create_organization(db: Session, organization: Organization):
 def create_employee(db: Session, employee: Employee):
     organization = db.query(Organization).filter(Organization.id == employee.organization_id).first()
     if not organization:
-        raise HTTPException(status_code=401, detail="Organização não encontrada.")
+        raise ValueError("Organização não encontrada.")
     employee_dict = employee.dict(exclude={'organization_id'})
     new_employee = Employee(**employee_dict)
     new_employee.organization_id = employee.organization_id
@@ -26,27 +26,24 @@ def create_employee(db: Session, employee: Employee):
     return new_employee
 
 
-# recupera registros
+# Recuperando registros
 
 def retrieve_all_organizations(db: Session):
     return db.query(Organization).all()
 
 
+def get_organization(db: Session, organization_id: int):
+    return db.query(Organization).filter(Organization.id == organization_id).first()
+
+
+def update_organization_data(db: Session, organization: Organization):
+    db_organization = db.query(Organization).filter(Organization.id == organization.id).first()
+    db_organization.name = organization.name
+    db_organization.address = organization.address
+    db.commit()
+    db.refresh(db_organization)
+    return db_organization
+
+
 def get_all_employees(db: Session):
-    organizations = db.query(Organization).all()
-    if not organizations:
-        raise HTTPException(status_code=404, detail="Organizações não encontradas.")
-    employees = db.query(Employee).all()
-    for employee in employees:
-        employee.organization = next((org for org in organizations if org.id == employee.organization_id), None)
-    return employees
-
-    # estabelece a conexão com o banco de dados que é passada (via injeção de dependência) para cada função que precisa conectar ao banco.
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    return db.query(Employee).all()
