@@ -9,11 +9,9 @@ from camada_de_banco import get_db
 
 app = FastAPI()
 
-
 # Rota para obter todas as empresas
 @app.get("/api/v1/organizations", response_model=List[Organization], status_code=status.HTTP_200_OK)
 def get_all_organization(db: Session = Depends(get_db)):
-    """Função para obter todas as empresas"""
     organizations = retrieve_all_organizations(db)
     if not organizations:
         raise HTTPException(status_code=404, detail="Organizações não encontradas.")
@@ -22,8 +20,7 @@ def get_all_organization(db: Session = Depends(get_db)):
 
 # Rota para cadastrar uma nova empresa
 @app.post("/api/v1/organizations", response_model=Organization, status_code=status.HTTP_201_CREATED)
-def create_organization(organization: Organization, db: Session = Depends(get_db)):
-    """Função para criar uma nova organização"""
+def create_new_organization(organization: Organization, db: Session = Depends(get_db)):
     new_organization = create_organization(db, organization)
     return new_organization
 
@@ -31,7 +28,6 @@ def create_organization(organization: Organization, db: Session = Depends(get_db
 # Rota para atualizar uma empresa
 @app.put("/api/v1/organizations/", response_model=Organization, status_code=status.HTTP_200_OK)
 def update_organization(organization: Organization, db: Session = Depends(get_db)):
-    """Função para atualizar uma empresa"""
     db_organization = get_organization(db, organization.id)
     if not db_organization:
         raise HTTPException(status_code=404, detail="Organização não encontrada")
