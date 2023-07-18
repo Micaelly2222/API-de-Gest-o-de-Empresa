@@ -1,10 +1,12 @@
-from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///foo.db"
+Base = declarative_base()
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=None)
+
 
 def get_db():
     db = SessionLocal()

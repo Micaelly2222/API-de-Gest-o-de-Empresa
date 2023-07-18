@@ -9,4 +9,4 @@ class Employee(BaseModel):
     email: Optional[str] = None
     address: Optional[str] = None
     organization_id: int = None
-    organization: Optional["Organization"] = None  # Use string literal instead of direct import
+    organization: Optional["Organization"] = None

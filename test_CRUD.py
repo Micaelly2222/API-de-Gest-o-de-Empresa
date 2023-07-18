@@ -1,57 +1,101 @@
 import unittest
-from unittest.mock import MagicMock
 
-from CRUD import create_organization, create_employee, retrieve_all_organizations, get_organization, \
-    update_organization_data, get_all_employees
-from Models.Employee import Employee
-from Models.Organization import Organization
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from CRUD import Base, Organization, create_organization, retrieve_all_organizations, update_organization_data, \
+    get_organization
 
 
-class CRUDTests(unittest.TestCase):
+class TestCRUD(unittest.TestCase):
     def setUp(self):
-        self.db = MagicMock()
-        self.organization = Organization(name="Test Organization")
-        self.employee = Employee(name="John Doe", organization_id=1)
+        engine = create_engine('sqlite:///:memory:')
+        Base.metadata.create_all(engine)
+        self.SessionLocal = sessionmaker(bind=engine)
+        self.db = self.SessionLocal()
+
+    def tearDown(self):
+        self.db.close()
 
     def test_create_organization(self):
-        created_organization = create_organization(self.db, self.organization)
-        self.assertIsNotNone(created_organization)
-        self.assertEqual(created_organization.name, "Test Organization")
-
-    def test_create_employee(self):
-        self.db.query.return_value.filter.return_value.first.return_value = self.organization
-        created_employee = create_employee(self.db, self.employee)
-        self.assertIsNotNone(created_employee)
-        self.assertEqual(created_employee.name, "John Doe")
-        self.assertEqual(created_employee.organization_id, 1)
+        organization_data = {
+            'name': 'Empresa de Teste',
+            'resume': 'Empresa para fins de teste',
+            'url': 'http://empresa-teste.com',
+            'address': 'Rua dos Testes, 123',
+            'contacts': ['contato1@empresa-teste.com', 'contato2@empresa-teste.com']
+        }
+        new_organization = create_organization(self.db, organization_data)
+        self.assertEqual(new_organization.name, 'Empresa de Teste')
 
     def test_retrieve_all_organizations(self):
-        self.db.query.return_value.all.return_value = [self.organization]
+        organization_data = {
+            "name": "Empresa de Teste",
+            "resume": "Empresa para fins de teste",
+            "url": "http://empresa-teste.com",
+            "address": "Rua dos Testes, 123",
+            "contacts": ["contato1@empresa-teste.com", "contato2@empresa-teste.com"]
+        }
+        create_organization(self.db, organization_data)
         organizations = retrieve_all_organizations(self.db)
+
         self.assertIsNotNone(organizations)
         self.assertEqual(len(organizations), 1)
-        self.assertEqual(organizations[0].name, "Test Organization")
+        self.assertEqual(organizations[0].name, "Empresa de Teste")
+        self.assertEqual(organizations[0].resume, "Empresa para fins de teste")
+        self.assertEqual(organizations[0].url, "http://empresa-teste.com")
+        self.assertEqual(organizations[0].address, "Rua dos Testes, 123")
+        self.assertListEqual(organizations[0].contacts, ["contato1@empresa-teste.com", "contato2@empresa-teste.com"])
 
     def test_get_organization(self):
-        self.db.query.return_value.filter.return_value.first.return_value = self.organization
-        retrieved_organization = get_organization(self.db, 1)
-        self.assertIsNotNone(retrieved_organization)
-        self.assertEqual(retrieved_organization.name, "Test Organization")
+        organization_data = {
+            'name': 'Empresa de Teste',
+            'resume': 'Empresa para fins de teste',
+            'url': 'http://empresa-teste.com',
+            'address': 'Rua dos Testes, 123',
+            'contacts': ['contato1@empresa-teste.com', 'contato2@empresa-teste.com']
+        }
+        new_organization = create_organization(self.db, organization_data)
+        organization = get_organization(self.db, new_organization.id)
+        self.assertEqual(organization, new_organization)
 
     def test_update_organization_data(self):
-        self.db.query.return_value.filter.return_value.first.return_value = self.organization
-        updated_organization = update_organization_data(self.db, self.organization)
-        self.assertIsNotNone(updated_organization)
-        self.assertEqual(updated_organization.name, "Test Organization")
+        organization_data = {
+            "name": "Empresa de Teste",
+            "resume": "Empresa para fins de teste",
+            "url": "http://empresa-teste.com",
+            "address": "Rua dos Testes, 123",
+            "contacts": ["contato1@empresa-teste.com", "contato2@empresa-teste.com"]
+        }
+        create_organization(self.db, organization_data)
 
-    def test_get_all_employees(self):
-        self.db.query.return_value.all.return_value = [self.employee]
-        employees = get_all_employees(self.db)
-        self.assertIsNotNone(employees)
-        self.assertEqual(len(employees), 1)
-        self.assertEqual(employees[0].name, "John Doe")
-        self.assertEqual(employees[0].organization_id, 1)
+        updated_data = {
+            "name": "Empresa Atualizada",
+            "resume": "Empresa atualizada para fins de teste",
+            "url": "http://empresa-atualizada.com",
+            "address": "Rua das Atualizações, 456",
+            "contacts": ["contato3@empresa-atualizada.com"]
+        }
+
+        updated_organization = update_organization_data(self.db, Organization(**updated_data, id=1))
+
+        self.assertIsNotNone(updated_organization)
+        self.assertEqual(updated_organization.name, "Empresa Atualizada")
+        self.assertEqual(updated_organization.resume, "Empresa atualizada para fins de teste")
+        self.assertEqual(updated_organization.url, "http://empresa-atualizada.com")
+        self.assertEqual(updated_organization.address, "Rua das Atualizações, 456")
+        self.assertListEqual(updated_organization.contacts, ["contato3@empresa-atualizada.com"])
+
+        db_organization = get_organization(self.db, updated_organization.id)
+        self.assertIsNotNone(db_organization)
+        self.assertEqual(db_organization.name, "Empresa Atualizada")
+        self.assertEqual(db_organization.resume, "Empresa atualizada para fins de teste")
+        self.assertEqual(db_organization.url, "http://empresa-atualizada.com")
+        self.assertEqual(db_organization.address, "Rua das Atualizações, 456")
+        self.assertListEqual(db_organization.contacts, ["contato3@empresa-atualizada.com"])
 
 
 if __name__ == '__main__':
     unittest.main()
+
+#  python -m unittest test_CRUD.py

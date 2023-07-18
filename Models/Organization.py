@@ -1,14 +1,14 @@
-from typing import Optional
-from uuid import uuid4
+from sqlalchemy import Column, String
 
-from pydantic import BaseModel, Field
+from camada_de_banco import Base
 
 
-class Organization(BaseModel):
-    id: Optional[str] = Field(default_factory=lambda: str(uuid4()), alias='_id',
-                              description="Identificador da mensagem")
-    name: str
-    resume: Optional[str] = None
-    url: Optional[str] = None
-    address: Optional[str] = None
-    contacts: Optional[list[str]] = Field(default_factory=list)
+class Organization(Base):
+    __tablename__ = 'organization'
+
+    id = Column(String, primary_key=True, index=True)
+    name = Column(String, index=True)
+    resume = Column(String)
+    url = Column(String)
+    address = Column(String)
+    contacts = Column(String)

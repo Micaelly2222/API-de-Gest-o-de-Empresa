@@ -1,13 +1,27 @@
 from typing import Optional
 
+from sqlalchemy import Column, Integer, String, ARRAY
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
 
 from Models.Employee import Employee
 from Models.Organization import Organization
 
+Base = declarative_base()
 
-def create_organization(db: Session, organization: Organization):
-    new_organization = Organization(**organization.dict())
+
+class Organization(Base):
+    __tablename__ = 'organizations'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    resume = Column(String(500), nullable=False)
+    url = Column(String(200), nullable=True)
+    address = Column(String(200), nullable=True)
+    contacts = Column(ARRAY(String), nullable=True)
+
+
+def create_organization(db, data):
+    new_organization = Organization(**data)
     db.add(new_organization)
     db.commit()
     db.refresh(new_organization)
@@ -15,10 +29,10 @@ def create_organization(db: Session, organization: Organization):
 
 
 def create_employee(db: Session, employee: Employee) -> Employee:
-    organization = db.query(Organization).filter(Organization._id == employee.organization_id).first()
+    organization = db.query(Organization).filter(Organization.id == employee.organization_id).first()
     if organization is None:
         raise ValueError("Organization not found")
-    db_employee = EmployeeDB(**employee.dict())
+    db_employee = Employee(**employee.dict())
     db_employee.organization = organization
     db.add(db_employee)
     db.commit()
