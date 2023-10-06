@@ -1,9 +1,10 @@
 # API de Gestão de Empresa
 
-Fazer uma API que receba empresas e funcionarios que pertencam a essas empresas
+Esta API permite gerenciar empresas e funcionários associados a elas. É possível realizar operações de criação, leitura e atualização dos dados. A API armazena os dados em um banco de dados SQLite e utiliza o SQL Alchemy como ferramenta ORM para lidar com as consultas e operações no banco de dados.
 
+## Visão Geral
 
-Essa API permite gerenciar empresas e funcionários associados a elas. É possível realizar operações de criação, leitura e atualização dos dados. A API armazena os dados em um banco de dados SQLite e utiliza o SQL Alchemy como ferramenta ORM para lidar com as consultas e operações no banco de dados.
+O objetivo deste projeto é criar uma API para gerenciar informações de empresas e seus funcionários. A API oferece operações básicas, como criação, leitura e atualização de dados. Além disso, a API valida se um funcionário está associado a uma empresa antes de cadastrá-lo.
 
 - [x] Salvar os dados no SQLITE
 - [x] Usar SQL ALCHEMY
@@ -13,7 +14,7 @@ Essa API permite gerenciar empresas e funcionários associados a elas. É possí
 ## Bonus
 
 - [ ] Ter hierarquia entre os funcionarios, onde posso consultar toda a hierarquia de um funcionario(superiores, pares e
-  subordinados) :cry:
+  subordinados) 
 - [ ] Trocar para um banco de grafos (neo4j ou redis graph)
 
 ## Linguagens e Ferramentas Utilizadas
@@ -22,6 +23,11 @@ Essa API permite gerenciar empresas e funcionários associados a elas. É possí
 * [SqlAlchemy](https://www.sqlalchemy.org/), ferramentas SQL em Python para ORM flexíveis
 * [FastAPI](https://fastapi.tiangolo.com/), framework Python focado no desenvolvimento de API's
 * [Unittest](https://docs.python.org/3/library/unittest.html), biblioteca de testes unitários em Python. Utilizada para escrever e executar testes automatizados.
+
+## Requisitos Mínimos de Instalação
+* Python (versão 3.6 ou superior)
+* pip install sqlalchemy
+* pip install fastapi
 
 ## Testes Automatizados
 
